@@ -117,7 +117,7 @@
 <script>
 (function () {
   var API = 'shopify:admin/api/2026-07/graphql.json';
-  var APP_TITLE = 'notic-discounts';
+  var APP_TITLES = ['notic-discounts', 'NOTIC Discounts'];
   var GIFT_TITLE = 'Build your gift';
   var FN_HANDLE = 'notic-perfume-pricing';
   var GIFT_DEFAULT = { prefix: 'Gift of', tiers: [[2, 5], [3, 10], [4, 15]] };
@@ -261,9 +261,9 @@
         var key;
         if (o.kind === 'qty') key = 'qty|' + sig(o.items);
         else if (o.kind === 'addon') key = 'addon|' + sig(o.items) + '|' + sig(o.buys);
-        else if (o.kind === 'app' && o.app === APP_TITLE) key = 'gift|' + o.id;
+        else if (o.kind === 'app' && APP_TITLES.indexOf(o.app) >= 0) key = 'gift|' + o.id;
         else key = o.kind + '|' + o.id;
-        if (!groups[key]) { groups[key] = { key: key, kind: o.kind === 'app' && o.app === APP_TITLE ? 'gift' : o.kind, offers: [] }; order.push(key); }
+        if (!groups[key]) { groups[key] = { key: key, kind: o.kind === 'app' && APP_TITLES.indexOf(o.app) >= 0 ? 'gift' : o.kind, offers: [] }; order.push(key); }
         groups[key].offers.push(o);
       });
 
