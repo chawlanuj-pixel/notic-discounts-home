@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="shopify-api-key" content="79a7aa99f0c8c9bf0ccc8165e518f3bf">
+<script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
+<script src="https://cdn.shopify.com/shopifycloud/polaris.js"></script>
+<title>NOTIC Discounts</title>
+<style>
+  :root { --ink:#121212; --muted:#616161; --line:#e3e3e3; --soft:#f6f6f7; --lime:#C6FF00; }
+  body { margin:0; background:#f1f1f1; color:var(--ink); font:14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px; }
+  .kpi { background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .kpi b { display:block; font-size:22px; line-height:1.2; margin-top:4px; font-variant-numeric:tabular-nums; }
+  .kpi small { color:var(--muted); }
+  .kpi--hi { border-color:var(--ink); box-shadow:inset 0 -4px 0 var(--lime); }
+  table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
+  th, td { text-align:left; padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-weight:600; color:var(--muted); font-size:12px; background:var(--soft); }
+  td.n, th.n { text-align:right; white-space:nowrap; }
+  .bar { height:6px; border-radius:3px; background:var(--soft); margin-top:5px; overflow:hidden; }
+  .bar i { display:block; height:100%; background:var(--ink); }
+  .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; justify-content:space-between; }
+  .muted { color:var(--muted); }
+  .tiers { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; }
+  .tier { border:1px solid var(--line); border-radius:10px; padding:12px; text-align:center; background:#fff; }
+  .tier b { display:block; font-size:20px; }
+  .empty { padding:18px; text-align:center; color:var(--muted); background:var(--soft); border-radius:10px; }
+  .stack > * + * { margin-top:16px; }
+  select { font:inherit; padding:6px 10px; border-radius:8px; border:1px solid #c9c9c9; background:#fff; }
+  @media (max-width:600px) { .tiers { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<s-page heading="NOTIC Discounts">
+  <div class="stack">
+
+    <s-section heading="Build your gift discount">
+      <div class="row">
+        <div>
+          <div id="gift-status">Checking…</div>
+          <div class="muted" style="margin-top:4px">Gift of 2 gets 5% off, gift of 3 gets 10%, gift of 4 or more gets 15%.</div>
+        </div>
+        <div id="gift-action"></div>
+      </div>
+    </s-section>
+
+    <s-section>
+      <div class="row">
+        <s-heading>Performance</s-heading>
+        <label class="muted">Period
+          <select id="period">
+            <option value="7">Last 7 days</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="60">Last 60 days</option>
+          </select>
+        </label>
+      </div>
+      <div class="kpis" id="kpis" style="margin-top:14px"><div class="empty" style="grid-column:1/-1">Loading orders…</div></div>
+    </s-section>
+
+    <s-section heading="Build your gift">
+      <div id="gifts"><div class="empty">Loading…</div></div>
+    </s-section>
+
+    <s-section heading="Discounts used">
+      <div id="discounts"><div class="empty">Loading…</div></div>
+    </s-section>
+
+    <s-section heading="Top products">
+      <div id="products"><div class="empty">Loading…</div></div>
+    </s-section>
+
+    <p class="muted" id="foot" style="text-align:center"></p>
+  </div>
+</s-page>
+
+<script>
+(function () {
+  var API = 'shopify:admin/api/2026-07/graphql.json';
+  var GIFT_TITLE = 'Build your gift';
+  var FN_HANDLE = 'notic-perfume-pricing';
+  var MAX_PAGES = 40;
+
+  var inr = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+  var num = new Intl.NumberFormat('en-IN');
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function amt(m) { return m && m.shopMoney ? parseFloat(m.shopMoney.amount) || 0 : 0; }
+  function pct(a, b) { return b ? Math.round((a / b) * 1000) / 10 + '%' : '0%'; }
+
+  function gql(query, variables) {
+    return fetch(API, { method: 'POST', body: JSON.stringify({ query: query, variables: variables || {} }) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j.errors && j.errors.length) throw new Error(j.errors.map(function (e) { return e.message; }).join('; '));
+        return j.data;
+      });
+  }
+
+  function appTitle(a) {
+    if (!a) return 'Other';
+    return a.title || a.code || 'Other';
+  }
+
+  /* ---------- gift discount status ---------- */
+
+  var DISC_Q = 'query { discountNodes(first: 50, query: "type:app") { nodes { id discount { __typename ... on DiscountAutomaticApp { title status startsAt asyncUsageCount appDiscountType { functionId title app { title } } } } } } }';
+
+  function loadGift() {
+    return gql(DISC_Q).then(function (d) {
+      var nodes = (d.discountNodes.nodes || []).filter(function (n) {
+        return n.discount && n.discount.__typename === 'DiscountAutomaticApp' &&
+          n.discount.appDiscountType && n.discount.appDiscountType.app &&
+          n.discount.appDiscountType.app.title === 'notic-discounts';
+      });
+      var gift = nodes.filter(function (n) { return n.discount.title === GIFT_TITLE; })[0] || nodes[0];
+      renderGift(gift);
+    }).catch(function (e) {
+      $('gift-status').innerHTML = '<s-badge tone="critical">Could not load</s-badge> <span class="muted">' + esc(e.message) + '</span>';
+    });
+  }
+
+  function renderGift(node) {
+    var st = $('gift-status'), act = $('gift-action');
+    act.innerHTML = '';
+    if (!node) {
+      st.innerHTML = '<s-badge tone="warning">Off</s-badge> <strong>Not set up yet.</strong> Gift boxes currently get no discount at checkout.';
+      act.appendChild(button('Turn on gift discount', createGift));
+      return;
+    }
+    var d = node.discount;
+    var tone = d.status === 'ACTIVE' ? 'success' : (d.status === 'SCHEDULED' ? 'info' : 'warning');
+    st.innerHTML = '<s-badge tone="' + tone + '">' + esc(d.status.charAt(0) + d.status.slice(1).toLowerCase()) + '</s-badge> <strong>' + esc(d.title) + '</strong>' +
+      ' <span class="muted">· used on ' + num.format(d.asyncUsageCount || 0) + ' orders</span>';
+    if (d.status === 'EXPIRED') {
+      act.appendChild(button('Turn on again', function () { return activate(node.id); }));
+    }
+  }
+
+  function button(label, onClick) {
+    var b = document.createElement('s-button');
+    b.setAttribute('variant', 'primary');
+    b.textContent = label;
+    b.addEventListener('click', function () {
+      b.setAttribute('loading', '');
+      Promise.resolve(onClick()).finally(function () { b.removeAttribute('loading'); });
+    });
+    return b;
+  }
+
+  function toast(msg, isError) {
+    try { shopify.toast.show(msg, { isError: !!isError }); } catch (e) { alert(msg); }
+  }
+
+  function createGift() {
+    var input = {
+      title: GIFT_TITLE,
+      functionHandle: FN_HANDLE,
+      discountClasses: ['PRODUCT'],
+      startsAt: new Date(Date.now() - 60000).toISOString(),
+      combinesWith: { productDiscounts: true, orderDiscounts: false, shippingDiscounts: true }
+    };
+    return gql('mutation ($d: DiscountAutomaticAppInput!) { discountAutomaticAppCreate(automaticAppDiscount: $d) { automaticAppDiscount { discountId } userErrors { field message } } }', { d: input })
+      .then(function (d) {
+        var errs = d.discountAutomaticAppCreate.userErrors;
+        if (errs.length) throw new Error(errs.map(function (e) { return e.message; }).join('; '));
+        toast('Gift discount is on');
+        return loadGift();
+      })
+      .catch(function (e) { toast(e.message, true); });
+  }
+
+  function activate(id) {
+    return gql('mutation ($id: ID!) { discountAutomaticActivate(id: $id) { automaticDiscountNode { id } userErrors { field message } } }', { id: id })
+      .then(function (d) {
+        var errs = d.discountAutomaticActivate.userErrors;
+        if (errs.length) throw new Error(errs.map(function (e) { return e.message; }).join('; '));
+        toast('Gift discount is on');
+        return loadGift();
+      })
+      .catch(function (e) { toast(e.message, true); });
+  }
+
+  /* ---------- orders ---------- */
+
+  var APP_FRAG = '__typename ... on AutomaticDiscountApplication { title } ... on DiscountCodeApplication { code } ... on ManualDiscountApplication { title } ... on ScriptDiscountApplication { title }';
+  var ORDERS_Q = 'query ($q: String!, $after: String) { orders(first: 25, after: $after, query: $q, sortKey: CREATED_AT, reverse: true) { pageInfo { hasNextPage endCursor } nodes { id name createdAt cancelledAt totalPriceSet { shopMoney { amount } } totalDiscountsSet { shopMoney { amount } } discountApplications(first: 8) { nodes { ' + APP_FRAG + ' } } lineItems(first: 25) { nodes { quantity name customAttributes { key value } originalTotalSet { shopMoney { amount } } discountAllocations { allocatedAmountSet { shopMoney { amount } } discountApplication { ' + APP_FRAG + ' } } } } } } }';
+
+  var loadToken = 0;
+
+  function loadOrders(days) {
+    var token = ++loadToken;
+    var since = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10);
+    var q = 'created_at:>=' + since;
+    var all = [], pages = 0;
+    ['gifts', 'discounts', 'products'].forEach(function (id) { $(id).innerHTML = '<div class="empty">Loading…</div>'; });
+    $('kpis').innerHTML = '<div class="empty" style="grid-column:1/-1">Loading orders…</div>';
+
+    function page(after) {
+      return gql(ORDERS_Q, { q: q, after: after || null }).then(function (d) {
+        if (token !== loadToken) return null;
+        all = all.concat(d.orders.nodes);
+        pages++;
+        if (d.orders.pageInfo.hasNextPage && pages < MAX_PAGES) return page(d.orders.pageInfo.endCursor);
+        return { orders: all, truncated: d.orders.pageInfo.hasNextPage };
+      });
+    }
+
+    return page().then(function (res) {
+      if (!res) return;
+      render(res.orders.filter(function (o) { return !o.cancelledAt; }), days, res.truncated);
+    }).catch(function (e) {
+      $('kpis').innerHTML = '<div class="empty" style="grid-column:1/-1">Could not load orders: ' + esc(e.message) + '</div>';
+      ['gifts', 'discounts', 'products'].forEach(function (id) { $(id).innerHTML = ''; });
+    });
+  }
+
+  function render(orders, days, truncated) {
+    var revenue = 0, disc = 0, discOrders = 0, discovery = 0;
+    var byDisc = {}, byProd = {}, gifts = {}, giftOrders = {};
+
+    orders.forEach(function (o) {
+      var total = amt(o.totalPriceSet), od = amt(o.totalDiscountsSet);
+      revenue += total; disc += od;
+      if (od > 0) discOrders++;
+      var seenDisc = {}, hasDiscovery = false;
+
+      o.lineItems.nodes.forEach(function (li) {
+        var attrs = {};
+        (li.customAttributes || []).forEach(function (a) { attrs[a.key] = a.value; });
+        var lineDisc = 0;
+        (li.discountAllocations || []).forEach(function (al) {
+          var t = appTitle(al.discountApplication), v = amt(al.allocatedAmountSet);
+          lineDisc += v;
+          var row = byDisc[t] || (byDisc[t] = { title: t, orders: 0, given: 0, revenue: 0 });
+          row.given += v;
+          if (!seenDisc[t]) { seenDisc[t] = 1; row.orders++; row.revenue += total; }
+        });
+        var net = amt(li.originalTotalSet) - lineDisc;
+
+        var p = byProd[li.name] || (byProd[li.name] = { name: li.name, units: 0, sales: 0 });
+        p.units += li.quantity; p.sales += net;
+        if (/discovery set/i.test(li.name)) hasDiscovery = true;
+
+        var set = attrs._set || '';
+        if (/^Gift of/i.test(set)) {
+          var key = o.id + '|' + (attrs._set_key || set);
+          var g = gifts[key] || (gifts[key] = { items: 0, value: 0, saved: 0 });
+          g.items += li.quantity; g.value += net;
+          (li.discountAllocations || []).forEach(function (al) {
+            if (appTitle(al.discountApplication) === GIFT_TITLE) g.saved += amt(al.allocatedAmountSet);
+          });
+          giftOrders[o.id] = 1;
+        }
+      });
+      if (hasDiscovery) discovery++;
+    });
+
+    var n = orders.length;
+    $('kpis').innerHTML = [
+      kpi('Orders', num.format(n), days + ' days'),
+      kpi('Revenue', inr.format(revenue), 'after discounts'),
+      kpi('Average order', inr.format(n ? revenue / n : 0), ''),
+      kpi('Discounts given', inr.format(disc), pct(discOrders, n) + ' of orders used one'),
+      kpi('Discovery Set attach', pct(discovery, n), num.format(discovery) + ' orders', true),
+      kpi('Gift orders', num.format(Object.keys(giftOrders).length), pct(Object.keys(giftOrders).length, n) + ' of orders', true)
+    ].join('');
+
+    renderGifts(gifts);
+    renderDiscounts(byDisc);
+    renderProducts(byProd);
+    $('foot').textContent = 'Cancelled orders excluded. Updated ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) +
+      (truncated ? ' · showing the latest ' + num.format(n) + ' orders only' : '');
+  }
+
+  function kpi(label, value, sub, hi) {
+    return '<div class="kpi' + (hi ? ' kpi--hi' : '') + '"><small>' + esc(label) + '</small><b>' + esc(value) + '</b><small>' + esc(sub) + '</small></div>';
+  }
+
+  function renderGifts(gifts) {
+    var list = Object.keys(gifts).map(function (k) { return gifts[k]; });
+    if (!list.length) {
+      $('gifts').innerHTML = '<div class="empty">No gift boxes ordered in this period yet.</div>';
+      return;
+    }
+    var tiers = { 2: 0, 3: 0, 4: 0 }, value = 0, saved = 0, items = 0;
+    list.forEach(function (g) {
+      tiers[g.items >= 4 ? 4 : (g.items >= 3 ? 3 : 2)]++;
+      value += g.value; saved += g.saved; items += g.items;
+    });
+    $('gifts').innerHTML =
+      '<div class="kpis">' +
+        kpi('Gift boxes', num.format(list.length), num.format(items) + ' items') +
+        kpi('Gift sales', inr.format(value), 'after discount') +
+        kpi('Average gift', inr.format(value / list.length), (items / list.length).toFixed(1) + ' items') +
+        kpi('Customer savings', inr.format(saved), 'from ' + GIFT_TITLE) +
+      '</div>' +
+      '<div class="tiers" style="margin-top:12px">' +
+        tier('Gift of 2', '5% off', tiers[2], list.length) +
+        tier('Gift of 3', '10% off', tiers[3], list.length) +
+        tier('Gift of 4+', '15% off', tiers[4], list.length) +
+      '</div>';
+  }
+
+  function tier(label, off, count, total) {
+    return '<div class="tier"><small class="muted">' + label + ' · ' + off + '</small><b>' + num.format(count) + '</b><small class="muted">' + pct(count, total) + ' of gifts</small></div>';
+  }
+
+  function renderDiscounts(byDisc) {
+    var rows = Object.keys(byDisc).map(function (k) { return byDisc[k]; }).sort(function (a, b) { return b.given - a.given; });
+    if (!rows.length) { $('discounts').innerHTML = '<div class="empty">No discounts used in this period.</div>'; return; }
+    var max = rows[0].given || 1;
+    $('discounts').innerHTML = '<table><thead><tr><th>Discount</th><th class="n">Orders</th><th class="n">Given</th><th class="n">Order revenue</th></tr></thead><tbody>' +
+      rows.map(function (r) {
+        return '<tr><td>' + esc(r.title) + '<div class="bar"><i style="width:' + Math.max(2, r.given / max * 100) + '%"></i></div></td>' +
+          '<td class="n">' + num.format(r.orders) + '</td><td class="n">' + inr.format(r.given) + '</td><td class="n">' + inr.format(r.revenue) + '</td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+
+  function renderProducts(byProd) {
+    var rows = Object.keys(byProd).map(function (k) { return byProd[k]; }).sort(function (a, b) { return b.units - a.units; }).slice(0, 10);
+    if (!rows.length) { $('products').innerHTML = '<div class="empty">No sales in this period.</div>'; return; }
+    var max = rows[0].units || 1;
+    $('products').innerHTML = '<table><thead><tr><th>Product</th><th class="n">Units</th><th class="n">Sales</th></tr></thead><tbody>' +
+      rows.map(function (r) {
+        return '<tr><td>' + esc(r.name) + '<div class="bar"><i style="width:' + Math.max(2, r.units / max * 100) + '%"></i></div></td>' +
+          '<td class="n">' + num.format(r.units) + '</td><td class="n">' + inr.format(r.sales) + '</td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+
+  $('period').addEventListener('change', function (e) { loadOrders(parseInt(e.target.value, 10)); });
+  loadGift();
+  loadOrders(30);
+})();
+</script>
+</body>
+</html>
