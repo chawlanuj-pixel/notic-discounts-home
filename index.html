@@ -8,87 +8,133 @@
 <script src="https://cdn.shopify.com/shopifycloud/polaris.js"></script>
 <title>NOTIC Discounts</title>
 <style>
-  :root { --ink:#121212; --muted:#616161; --line:#e3e3e3; --soft:#f6f6f7; --lime:#C6FF00; }
+  :root { --ink:#121212; --muted:#616161; --line:#e3e3e3; --soft:#f6f6f7; --lime:#C6FF00; --warn:#fff4d6; --warn-ink:#7a5200; --bad:#fde8e8; --bad-ink:#8e1f0b; --ok:#e6f6ea; --ok-ink:#0c5132; --info:#eaf2ff; --info-ink:#00337a; }
+  * { box-sizing:border-box; }
   body { margin:0; background:#f1f1f1; color:var(--ink); font:14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width:1100px; margin:0 auto; padding:16px; }
+  .top { display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:14px; }
+  .top h1 { font-size:20px; margin:0; }
+  .tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+  .tabs button { font:inherit; border:1px solid #c9c9c9; background:#fff; border-radius:999px; padding:7px 14px; cursor:pointer; }
+  .tabs button[aria-selected="true"] { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .panel[hidden] { display:none; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px; }
+  .card h2 { font-size:15px; margin:0 0 4px; }
+  .card > .sub { color:var(--muted); margin:0 0 12px; }
   .kpis { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px; }
-  .kpi { background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
-  .kpi b { display:block; font-size:22px; line-height:1.2; margin-top:4px; font-variant-numeric:tabular-nums; }
+  .kpi { background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+  .kpi b { display:block; font-size:21px; line-height:1.2; margin:3px 0; font-variant-numeric:tabular-nums; }
   .kpi small { color:var(--muted); }
   .kpi--hi { border-color:var(--ink); box-shadow:inset 0 -4px 0 var(--lime); }
   table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
-  th, td { text-align:left; padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th, td { text-align:left; padding:8px; border-bottom:1px solid var(--line); vertical-align:top; }
   th { font-weight:600; color:var(--muted); font-size:12px; background:var(--soft); }
   td.n, th.n { text-align:right; white-space:nowrap; }
+  tr.step td { background:#fbffe8; }
+  tr.step td:first-child { box-shadow:inset 3px 0 0 var(--lime); }
+  .scroll { overflow-x:auto; }
   .bar { height:6px; border-radius:3px; background:var(--soft); margin-top:5px; overflow:hidden; }
   .bar i { display:block; height:100%; background:var(--ink); }
-  .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; justify-content:space-between; }
   .muted { color:var(--muted); }
-  .tiers { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; }
-  .tier { border:1px solid var(--line); border-radius:10px; padding:12px; text-align:center; background:#fff; }
-  .tier b { display:block; font-size:20px; }
-  .empty { padding:18px; text-align:center; color:var(--muted); background:var(--soft); border-radius:10px; }
-  .stack > * + * { margin-top:16px; }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; }
+  .chip { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:var(--soft); border:1px solid var(--line); font-size:13px; white-space:nowrap; }
+  .chip b { font-weight:700; }
+  .chip--tier { background:#fff; border-color:var(--ink); }
+  .chip--tier b { background:var(--lime); padding:0 6px; border-radius:6px; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:6px; font-size:12px; font-weight:600; }
+  .b-ok { background:var(--ok); color:var(--ok-ink); } .b-warn { background:var(--warn); color:var(--warn-ink); }
+  .b-bad { background:var(--bad); color:var(--bad-ink); } .b-info { background:var(--info); color:var(--info-ink); }
+  .b-off { background:var(--soft); color:var(--muted); }
+  .prog { border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px; background:#fff; }
+  .prog-head { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:flex-start; }
+  .prog-head h3 { margin:0; font-size:15px; }
+  .grid2 { display:grid; grid-template-columns:140px 1fr; gap:6px 12px; margin-top:10px; font-size:13px; }
+  .grid2 dt { color:var(--muted); } .grid2 dd { margin:0; }
+  .alert { display:flex; gap:10px; padding:10px 12px; border-radius:10px; margin-bottom:8px; align-items:flex-start; }
+  .alert strong { display:block; }
+  .a-warn { background:var(--warn); color:var(--warn-ink); } .a-bad { background:var(--bad); color:var(--bad-ink); }
+  .a-info { background:var(--info); color:var(--info-ink); } .a-ok { background:var(--ok); color:var(--ok-ink); }
+  .empty { padding:16px; text-align:center; color:var(--muted); background:var(--soft); border-radius:10px; }
   select { font:inherit; padding:6px 10px; border-radius:8px; border:1px solid #c9c9c9; background:#fff; }
-  @media (max-width:600px) { .tiers { grid-template-columns:1fr; } }
+  details summary { cursor:pointer; color:var(--muted); margin-top:8px; }
+  .tiers { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; }
+  .tier { border:1px solid var(--line); border-radius:10px; padding:10px; text-align:center; }
+  .tier b { display:block; font-size:19px; }
+  @media (max-width:600px) { .grid2 { grid-template-columns:1fr; } .grid2 dt { margin-top:6px; } }
 </style>
 </head>
 <body>
-<s-page heading="NOTIC Discounts">
-  <div class="stack">
-
-    <s-section heading="Build your gift discount">
-      <div class="row">
-        <div>
-          <div id="gift-status">Checking…</div>
-          <div class="muted" style="margin-top:4px">Gift of 2 gets 5% off, gift of 3 gets 10%, gift of 4 or more gets 15%.</div>
-        </div>
-        <div id="gift-action"></div>
-      </div>
-    </s-section>
-
-    <s-section>
-      <div class="row">
-        <s-heading>Performance</s-heading>
-        <label class="muted">Period
-          <select id="period">
-            <option value="7">Last 7 days</option>
-            <option value="30" selected>Last 30 days</option>
-            <option value="60">Last 60 days</option>
-          </select>
-        </label>
-      </div>
-      <div class="kpis" id="kpis" style="margin-top:14px"><div class="empty" style="grid-column:1/-1">Loading orders…</div></div>
-    </s-section>
-
-    <s-section heading="Build your gift">
-      <div id="gifts"><div class="empty">Loading…</div></div>
-    </s-section>
-
-    <s-section heading="Discounts used">
-      <div id="discounts"><div class="empty">Loading…</div></div>
-    </s-section>
-
-    <s-section heading="Top products">
-      <div id="products"><div class="empty">Loading…</div></div>
-    </s-section>
-
-    <p class="muted" id="foot" style="text-align:center"></p>
+<div class="wrap">
+  <div class="top">
+    <h1>NOTIC Discounts</h1>
+    <label class="muted">Orders from
+      <select id="period">
+        <option value="7">last 7 days</option>
+        <option value="30" selected>last 30 days</option>
+        <option value="60">last 60 days</option>
+      </select>
+    </label>
   </div>
-</s-page>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
+    <button role="tab" data-tab="offers" aria-selected="false">Offer book</button>
+    <button role="tab" data-tab="ladders" aria-selected="false">Price ladders</button>
+    <button role="tab" data-tab="stacking" aria-selected="false">How offers stack</button>
+    <button role="tab" data-tab="opps" aria-selected="false">Missed upsells</button>
+    <button role="tab" data-tab="gifts" aria-selected="false">Gifts</button>
+  </div>
+
+  <section class="panel" id="p-overview">
+    <div id="health" class="card"><h2>Offer health</h2><div class="empty">Checking offers…</div></div>
+    <div class="card"><h2>Store performance</h2><p class="sub">Cancelled orders are left out.</p><div id="kpis" class="kpis"><div class="empty" style="grid-column:1/-1">Loading orders…</div></div></div>
+    <div class="card"><h2>Performance by offer</h2><p class="sub">Each offer's orders, how much it gave away, and the effective discount on the lines it touched.</p><div id="progperf"><div class="empty">Loading…</div></div></div>
+  </section>
+
+  <section class="panel" id="p-offers" hidden>
+    <div class="card"><h2>Offer book</h2><p class="sub">Every live offer, read straight from Shopify and written as the customer experiences it. Tiers that belong together are grouped.</p><div id="book"><div class="empty">Loading offers…</div></div></div>
+  </section>
+
+  <section class="panel" id="p-ladders" hidden>
+    <div class="card"><h2>Price ladders</h2><p class="sub">What the customer pays at every quantity, using today's prices. Highlighted rows are where a new tier starts.</p><div id="ladders"><div class="empty">Loading…</div></div></div>
+  </section>
+
+  <section class="panel" id="p-stacking" hidden>
+    <div class="card"><h2>How offers stack</h2><p class="sub">Shopify gives each cart line one product discount. When two offers could discount the same line, the one that saves the customer more wins. This page shows where that happens.</p><div id="stacking"><div class="empty">Loading…</div></div></div>
+  </section>
+
+  <section class="panel" id="p-opps" hidden>
+    <div class="card"><h2>Missed upsells</h2><p class="sub">Orders that stopped just short of a better deal. These customers were one step away from buying more.</p><div id="opps"><div class="empty">Loading orders…</div></div></div>
+  </section>
+
+  <section class="panel" id="p-gifts" hidden>
+    <div class="card"><h2>Build your gift</h2><p class="sub">Gift boxes built on the Build your gift page. Every item in a box shares one gift key.</p><div id="gifts"><div class="empty">Loading…</div></div></div>
+  </section>
+
+  <p class="muted" id="foot" style="text-align:center"></p>
+</div>
 
 <script>
 (function () {
   var API = 'shopify:admin/api/2026-07/graphql.json';
+  var APP_TITLE = 'notic-discounts';
   var GIFT_TITLE = 'Build your gift';
   var FN_HANDLE = 'notic-perfume-pricing';
-  var MAX_PAGES = 40;
+  var GIFT_DEFAULT = { prefix: 'Gift of', tiers: [[2, 5], [3, 10], [4, 15]] };
+  var MAX_ORDER_PAGES = 40;
+  var NEAR_THRESHOLD = 500;
 
   var inr = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+  var inr2 = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 2 });
   var num = new Intl.NumberFormat('en-IN');
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function amt(m) { return m && m.shopMoney ? parseFloat(m.shopMoney.amount) || 0 : 0; }
-  function pct(a, b) { return b ? Math.round((a / b) * 1000) / 10 + '%' : '0%'; }
+  function pct(a, b) { return b ? (Math.round((a / b) * 1000) / 10) + '%' : '0%'; }
+  function fmtPct(p) { return (Math.round(p * 10) / 10) + '%'; }
+  function date(d) { return d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''; }
+  function short(t) { return String(t || '').replace(/^NOTIC\s+/i, '').split(':')[0]; }
+  function uniq(a) { return a.filter(function (x, i) { return a.indexOf(x) === i; }); }
 
   function gql(query, variables) {
     return fetch(API, { method: 'POST', body: JSON.stringify({ query: query, variables: variables || {} }) })
@@ -98,240 +144,677 @@
         return j.data;
       });
   }
+  function toast(msg, isError) { try { shopify.toast.show(msg, { isError: !!isError }); } catch (e) { alert(msg); } }
 
-  function appTitle(a) {
-    if (!a) return 'Other';
-    return a.title || a.code || 'Other';
-  }
-
-  /* ---------- gift discount status ---------- */
-
-  var DISC_Q = 'query { discountNodes(first: 50, query: "type:app") { nodes { id discount { __typename ... on DiscountAutomaticApp { title status startsAt asyncUsageCount appDiscountType { functionId title app { title } } } } } } }';
-
-  function loadGift() {
-    return gql(DISC_Q).then(function (d) {
-      var nodes = (d.discountNodes.nodes || []).filter(function (n) {
-        return n.discount && n.discount.__typename === 'DiscountAutomaticApp' &&
-          n.discount.appDiscountType && n.discount.appDiscountType.app &&
-          n.discount.appDiscountType.app.title === 'notic-discounts';
-      });
-      var gift = nodes.filter(function (n) { return n.discount.title === GIFT_TITLE; })[0] || nodes[0];
-      renderGift(gift);
-    }).catch(function (e) {
-      $('gift-status').innerHTML = '<s-badge tone="critical">Could not load</s-badge> <span class="muted">' + esc(e.message) + '</span>';
-    });
-  }
-
-  function renderGift(node) {
-    var st = $('gift-status'), act = $('gift-action');
-    act.innerHTML = '';
-    if (!node) {
-      st.innerHTML = '<s-badge tone="warning">Off</s-badge> <strong>Not set up yet.</strong> Gift boxes currently get no discount at checkout.';
-      act.appendChild(button('Turn on gift discount', createGift));
-      return;
-    }
-    var d = node.discount;
-    var tone = d.status === 'ACTIVE' ? 'success' : (d.status === 'SCHEDULED' ? 'info' : 'warning');
-    st.innerHTML = '<s-badge tone="' + tone + '">' + esc(d.status.charAt(0) + d.status.slice(1).toLowerCase()) + '</s-badge> <strong>' + esc(d.title) + '</strong>' +
-      ' <span class="muted">· used on ' + num.format(d.asyncUsageCount || 0) + ' orders</span>';
-    if (d.status === 'EXPIRED') {
-      act.appendChild(button('Turn on again', function () { return activate(node.id); }));
-    }
-  }
-
-  function button(label, onClick) {
-    var b = document.createElement('s-button');
-    b.setAttribute('variant', 'primary');
-    b.textContent = label;
+  /* ---------------- tabs ---------------- */
+  var tabs = document.querySelectorAll('[data-tab]');
+  Array.prototype.forEach.call(tabs, function (b) {
     b.addEventListener('click', function () {
-      b.setAttribute('loading', '');
-      Promise.resolve(onClick()).finally(function () { b.removeAttribute('loading'); });
+      Array.prototype.forEach.call(tabs, function (x) {
+        var on = x === b;
+        x.setAttribute('aria-selected', on ? 'true' : 'false');
+        $('p-' + x.getAttribute('data-tab')).hidden = !on;
+      });
+      try { localStorage.setItem('nd-tab', b.getAttribute('data-tab')); } catch (e) {}
     });
-    return b;
+  });
+  try { var saved = localStorage.getItem('nd-tab'); if (saved) { var t = document.querySelector('[data-tab="' + saved + '"]'); if (t) t.click(); } } catch (e) {}
+
+  /* ---------------- offers ---------------- */
+  var ITEMS = '__typename ... on DiscountProducts { products(first: 50) { nodes { id title } } } ... on DiscountCollections { collections(first: 10) { nodes { title } } } ... on AllDiscountItems { allItems }';
+  var COMB = 'combinesWith { productDiscounts orderDiscounts shippingDiscounts }';
+  var DISC_Q = 'query ($after: String) { discountNodes(first: 50, after: $after, sortKey: TITLE) { pageInfo { hasNextPage endCursor } nodes { id metafield(namespace: "$app", key: "config") { jsonValue } discount { __typename' +
+    ' ... on DiscountAutomaticBasic { title status startsAt endsAt asyncUsageCount ' + COMB + ' minimumRequirement { __typename ... on DiscountMinimumQuantity { greaterThanOrEqualToQuantity } ... on DiscountMinimumSubtotal { greaterThanOrEqualToSubtotal { amount } } } customerGets { value { __typename ... on DiscountPercentage { percentage } ... on DiscountAmount { amount { amount } appliesOnEachItem } } items { ' + ITEMS + ' } } }' +
+    ' ... on DiscountAutomaticBxgy { title status startsAt endsAt asyncUsageCount usesPerOrderLimit ' + COMB + ' customerBuys { value { __typename ... on DiscountQuantity { quantity } ... on DiscountPurchaseAmount { amount } } items { ' + ITEMS + ' } } customerGets { value { __typename ... on DiscountOnQuantity { quantity { quantity } effect { __typename ... on DiscountPercentage { percentage } ... on DiscountAmount { amount { amount } } } } } items { ' + ITEMS + ' } } }' +
+    ' ... on DiscountAutomaticApp { title status startsAt endsAt asyncUsageCount ' + COMB + ' appDiscountType { title app { title } } }' +
+    ' ... on DiscountAutomaticFreeShipping { title status startsAt endsAt asyncUsageCount ' + COMB + ' minimumRequirement { __typename ... on DiscountMinimumSubtotal { greaterThanOrEqualToSubtotal { amount } } ... on DiscountMinimumQuantity { greaterThanOrEqualToQuantity } } }' +
+    ' ... on DiscountCodeBasic { title status startsAt endsAt asyncUsageCount codes(first: 3) { nodes { code } } ' + COMB + ' customerGets { value { __typename ... on DiscountPercentage { percentage } ... on DiscountAmount { amount { amount } appliesOnEachItem } } } }' +
+    ' ... on DiscountCodeFreeShipping { title status startsAt endsAt asyncUsageCount codes(first: 3) { nodes { code } } }' +
+    ' ... on DiscountCodeBxgy { title status startsAt endsAt asyncUsageCount codes(first: 3) { nodes { code } } }' +
+    ' ... on DiscountCodeApp { title status startsAt endsAt asyncUsageCount codes(first: 3) { nodes { code } } }' +
+    ' } } } }';
+  var PRODUCTS_Q = 'query ($ids: [ID!]!) { nodes(ids: $ids) { ... on Product { id title productType variants(first: 4) { nodes { title price } } } } }';
+
+  var state = { programmes: [], past: [], codes: [], byTitle: {}, products: {}, gift: null, orders: null, days: 30 };
+
+  function items(it) {
+    var r = { products: [], collections: [], all: false };
+    if (!it) return r;
+    if (it.products) r.products = it.products.nodes.map(function (p) { return { id: p.id, title: p.title }; });
+    if (it.collections) r.collections = it.collections.nodes.map(function (c) { return c.title; });
+    if (it.allItems) r.all = true;
+    if (r.collections.some(function (c) { return /all products/i.test(c); })) r.all = true;
+    return r;
   }
 
-  function toast(msg, isError) {
-    try { shopify.toast.show(msg, { isError: !!isError }); } catch (e) { alert(msg); }
+  function parseOffer(n) {
+    var d = n.discount, t = d.__typename;
+    var o = { id: n.id, type: t, title: d.title, status: d.status, startsAt: d.startsAt, endsAt: d.endsAt, usage: d.asyncUsageCount || 0, combines: d.combinesWith || null };
+    if (t === 'DiscountAutomaticBasic') {
+      o.kind = 'qty';
+      var mr = d.minimumRequirement || {};
+      o.minQty = mr.greaterThanOrEqualToQuantity ? parseInt(mr.greaterThanOrEqualToQuantity, 10) : 0;
+      o.minSub = mr.greaterThanOrEqualToSubtotal ? parseFloat(mr.greaterThanOrEqualToSubtotal.amount) : 0;
+      if (!o.minQty) o.kind = o.minSub ? 'orderMin' : 'flat';
+      var v = d.customerGets.value;
+      if (v.__typename === 'DiscountPercentage') o.pct = v.percentage * 100;
+      else if (v.__typename === 'DiscountAmount') { o.amt = parseFloat(v.amount.amount); o.each = !!v.appliesOnEachItem; }
+      o.items = items(d.customerGets.items);
+    } else if (t === 'DiscountAutomaticBxgy') {
+      var bv = d.customerBuys.value, gv = d.customerGets.value;
+      o.kind = bv.__typename === 'DiscountPurchaseAmount' ? 'threshold' : 'addon';
+      o.buyQty = bv.quantity ? parseInt(bv.quantity, 10) : 0;
+      o.buyAmt = bv.amount ? parseFloat(bv.amount) : 0;
+      o.buys = items(d.customerBuys.items);
+      o.items = items(d.customerGets.items);
+      o.getQty = gv.quantity ? parseInt(gv.quantity.quantity, 10) : 1;
+      if (gv.effect.__typename === 'DiscountPercentage') o.pct = gv.effect.percentage * 100; else o.amt = parseFloat(gv.effect.amount.amount);
+      o.perOrder = d.usesPerOrderLimit;
+    } else if (t === 'DiscountAutomaticApp') {
+      o.kind = 'app';
+      o.app = d.appDiscountType && d.appDiscountType.app ? d.appDiscountType.app.title : '';
+      o.fn = d.appDiscountType ? d.appDiscountType.title : '';
+      o.config = n.metafield ? n.metafield.jsonValue : null;
+      o.items = { products: [], collections: [], all: true };
+    } else if (t === 'DiscountAutomaticFreeShipping') {
+      o.kind = 'ship';
+      var sr = d.minimumRequirement || {};
+      o.minSub = sr.greaterThanOrEqualToSubtotal ? parseFloat(sr.greaterThanOrEqualToSubtotal.amount) : 0;
+      o.minQty = sr.greaterThanOrEqualToQuantity ? parseInt(sr.greaterThanOrEqualToQuantity, 10) : 0;
+    } else {
+      o.kind = 'code';
+      o.codes = d.codes ? d.codes.nodes.map(function (c) { return c.code; }) : [];
+      if (d.customerGets && d.customerGets.value) {
+        var cv = d.customerGets.value;
+        if (cv.__typename === 'DiscountPercentage') o.pct = cv.percentage * 100; else if (cv.amount) o.amt = parseFloat(cv.amount.amount);
+      }
+    }
+    return o;
+  }
+
+  function sig(it) {
+    if (!it) return '';
+    if (it.all) return 'ALL';
+    return it.products.map(function (p) { return p.id; }).sort().join(',') + '|' + it.collections.slice().sort().join(',');
+  }
+
+  function loadOffers() {
+    var all = [];
+    function page(after) {
+      return gql(DISC_Q, { after: after || null }).then(function (d) {
+        all = all.concat(d.discountNodes.nodes);
+        if (d.discountNodes.pageInfo.hasNextPage) return page(d.discountNodes.pageInfo.endCursor);
+        return all;
+      });
+    }
+    return page().then(function (nodes) {
+      var offers = nodes.map(parseOffer);
+      var live = offers.filter(function (o) { return o.status === 'ACTIVE' || o.status === 'SCHEDULED'; });
+      state.past = offers.filter(function (o) { return o.status === 'EXPIRED'; });
+      state.codes = live.filter(function (o) { return o.kind === 'code'; });
+      state.byTitle = {};
+      offers.forEach(function (o) { state.byTitle[o.title] = o; });
+
+      var groups = {}, order = [];
+      live.forEach(function (o) {
+        if (o.kind === 'code') return;
+        var key;
+        if (o.kind === 'qty') key = 'qty|' + sig(o.items);
+        else if (o.kind === 'addon') key = 'addon|' + sig(o.items) + '|' + sig(o.buys);
+        else if (o.kind === 'app' && o.app === APP_TITLE) key = 'gift|' + o.id;
+        else key = o.kind + '|' + o.id;
+        if (!groups[key]) { groups[key] = { key: key, kind: o.kind === 'app' && o.app === APP_TITLE ? 'gift' : o.kind, offers: [] }; order.push(key); }
+        groups[key].offers.push(o);
+      });
+
+      var ids = [];
+      order.forEach(function (k) {
+        groups[k].offers.forEach(function (o) {
+          (o.items ? o.items.products : []).concat(o.buys ? o.buys.products : []).forEach(function (p) { ids.push(p.id); });
+        });
+      });
+      ids = uniq(ids);
+      return (ids.length ? gql(PRODUCTS_Q, { ids: ids.slice(0, 250) }) : Promise.resolve({ nodes: [] })).then(function (pd) {
+        state.products = {};
+        (pd.nodes || []).forEach(function (p) { if (p && p.id) state.products[p.id] = p; });
+        state.programmes = order.map(function (k) { return buildProgramme(groups[k]); });
+        state.programmes.sort(function (a, b) { return rank(a) - rank(b); });
+        state.gift = state.programmes.filter(function (p) { return p.kind === 'gift'; })[0] || null;
+        state.programmes.forEach(function (p) { p.offers.forEach(function (o) { o.prog = p; }); });
+        renderOffers();
+      });
+    }).catch(function (e) {
+      ['book', 'ladders', 'stacking'].forEach(function (id) { $(id).innerHTML = '<div class="empty">Could not load offers: ' + esc(e.message) + '</div>'; });
+      $('health').innerHTML = '<h2>Offer health</h2><div class="alert a-bad"><div><strong>Could not load offers</strong>' + esc(e.message) + '</div></div>';
+    });
+  }
+
+  var RANK = { gift: 0, qty: 1, addon: 2, threshold: 3, ship: 4, orderMin: 5, flat: 6, app: 7 };
+  function rank(p) { return RANK.hasOwnProperty(p.kind) ? RANK[p.kind] : 9; }
+
+  function commonPrefix(titles) {
+    var firsts = titles.map(function (t) { return t.split(' · ')[0].trim(); });
+    return firsts.every(function (f) { return f === firsts[0]; }) && titles.every(function (t) { return t.indexOf(' · ') > 0; }) ? firsts[0] : '';
+  }
+
+  function buildProgramme(g) {
+    var p = { key: g.key, kind: g.kind, offers: g.offers, tiers: [], name: '' };
+    var o0 = g.offers[0];
+    p.items = o0.items || { products: [], collections: [], all: false };
+    p.buys = o0.buys || null;
+    p.status = g.offers.every(function (o) { return o.status === 'ACTIVE'; }) ? 'ACTIVE' : (g.offers.some(function (o) { return o.status === 'ACTIVE'; }) ? 'PARTLY' : 'SCHEDULED');
+    p.usage = g.offers.reduce(function (s, o) { return s + o.usage; }, 0);
+
+    if (g.kind === 'gift') {
+      var cfg = o0.config || {};
+      var gt = Array.isArray(cfg.giftTiers) && cfg.giftTiers.length ? cfg.giftTiers : GIFT_DEFAULT.tiers;
+      p.prefix = cfg.giftPrefix || GIFT_DEFAULT.prefix;
+      p.tiers = gt.map(function (t) { return { min: t[0], pct: t[1], offer: o0 }; }).sort(function (a, b) { return a.min - b.min; });
+      p.name = o0.title;
+      p.unit = 'item';
+    } else if (g.kind === 'qty') {
+      p.tiers = g.offers.map(function (o) { return { min: o.minQty, pct: o.pct, amt: o.amt, each: o.each, offer: o }; }).sort(function (a, b) { return a.min - b.min; });
+      var prods = p.items.products.map(function (x) { return state.products[x.id]; }).filter(Boolean);
+      var types = uniq(prods.map(function (x) { return x.productType || ''; }));
+      p.name = commonPrefix(g.offers.map(function (o) { return o.title; })) ||
+        (types.length === 1 && types[0] ? types[0] + ' packs' : (p.items.products.length === 1 ? short(p.items.products[0].title) + ' packs' : 'Multi-buy packs'));
+      p.unit = /candle/i.test(p.name) ? 'candle' : (/salt/i.test(p.name) ? 'jar' : (/magafe|holder|mount/i.test(p.name) ? 'mount' : 'bottle'));
+    } else if (g.kind === 'addon') {
+      p.tiers = g.offers.map(function (o) { return { min: o.buyQty, pct: o.pct, amt: o.amt, offer: o }; }).sort(function (a, b) { return a.min - b.min; });
+      p.getName = p.items.products.length ? short(p.items.products[0].title) : 'the add-on';
+      p.name = (commonPrefix(g.offers.map(function (o) { return o.title; })) || p.getName) + ' add-on';
+      p.unit = 'bottle';
+    } else if (g.kind === 'threshold') {
+      p.tiers = [{ min: o0.buyAmt, pct: o0.pct, amt: o0.amt, offer: o0 }];
+      p.getName = p.items.products.length ? short(p.items.products[0].title) : 'the reward';
+      p.name = o0.title;
+    } else if (g.kind === 'ship') {
+      p.name = o0.title;
+      p.tiers = [{ min: o0.minSub || o0.minQty, offer: o0 }];
+    } else {
+      p.name = o0.title;
+      p.tiers = [{ min: o0.minSub || 0, pct: o0.pct, amt: o0.amt, offer: o0 }];
+    }
+    p.combinesMixed = uniq(g.offers.map(function (o) { return JSON.stringify(o.combines); })).length > 1;
+    p.combines = o0.combines;
+    return p;
+  }
+
+  function tierText(p, t) {
+    var off = t.pct != null ? fmtPct(t.pct) + ' off' : inr.format(t.amt) + ' off';
+    if (p.kind === 'gift') return 'Gift of ' + t.min + (t === p.tiers[p.tiers.length - 1] ? '+' : '') + ' → <b>' + off + '</b> every item';
+    if (p.kind === 'qty') return t.min + '+ ' + p.unit + 's → <b>' + off + (t.amt != null && t.each ? ' each' : '') + '</b>';
+    if (p.kind === 'addon') return t.min + ' ' + p.unit + (t.min > 1 ? 's' : '') + ' → <b>' + (t.pct === 100 ? 'free' : off) + '</b> ' + esc(p.getName);
+    if (p.kind === 'threshold') return 'Spend ' + inr.format(t.min) + '+ → <b>' + (t.pct === 100 ? 'free' : off) + '</b> ' + esc(p.getName);
+    if (p.kind === 'ship') return 'Free shipping' + (t.min ? ' from ' + inr.format(t.min) : '');
+    return '<b>' + off + '</b>';
+  }
+
+  function statusBadge(s) {
+    var m = { ACTIVE: ['b-ok', 'Active'], SCHEDULED: ['b-info', 'Scheduled'], PARTLY: ['b-warn', 'Partly active'], EXPIRED: ['b-off', 'Ended'] }[s] || ['b-off', s];
+    return '<span class="badge ' + m[0] + '">' + m[1] + '</span>';
+  }
+
+  function combText(c) {
+    if (!c) return 'n/a';
+    var on = [];
+    if (c.productDiscounts) on.push('product'); if (c.orderDiscounts) on.push('order'); if (c.shippingDiscounts) on.push('shipping');
+    return on.length ? 'Combines with ' + on.join(', ') + ' discounts' : 'Does not combine with anything';
+  }
+
+  function productList(it) {
+    if (!it) return '';
+    if (it.all) return 'Everything in the store';
+    var names = it.products.map(function (p) { return short(p.title); }).concat(it.collections.map(function (c) { return 'Collection: ' + c; }));
+    if (names.length <= 6) return esc(names.join(', '));
+    return esc(names.slice(0, 5).join(', ')) + ' <span class="muted">and ' + (names.length - 5) + ' more</span>';
+  }
+
+  function renderOffers() {
+    var P = state.programmes;
+    if (!P.length) { $('book').innerHTML = '<div class="empty">No live offers.</div>'; }
+    else $('book').innerHTML = P.map(function (p) {
+      var rows = '<dl class="grid2">';
+      if (p.kind === 'gift') rows += '<dt>Applies to</dt><dd>Items added through the Build your gift page (line property "' + esc(p.prefix) + ' N"). The box size is the total quantity in that box.</dd>';
+      else if (p.kind === 'addon') rows += '<dt>Unlocked by</dt><dd>' + productList(p.buys) + '</dd><dt>Discounts</dt><dd>' + productList(p.items) + ' (one per order)</dd>';
+      else if (p.kind === 'threshold') rows += '<dt>Qualifying spend</dt><dd>' + productList(p.buys) + '</dd><dt>Reward</dt><dd>' + productList(p.items) + '</dd>';
+      else if (p.kind !== 'ship') rows += '<dt>Products</dt><dd>' + productList(p.items) + '</dd>';
+      rows += '<dt>Stacking</dt><dd>' + combText(p.combines) + (p.combinesMixed ? ' <span class="badge b-warn">tiers differ</span>' : '') + '</dd>';
+      rows += '<dt>Customer sees</dt><dd>' + p.offers.map(function (o) { return '<span class="chip">' + esc(o.title) + '</span>'; }).join(' ') + '</dd>';
+      var starts = uniq(p.offers.map(function (o) { return date(o.startsAt); })).join(', ');
+      var ends = uniq(p.offers.map(function (o) { return o.endsAt ? date(o.endsAt) : 'no end date'; })).join(', ');
+      rows += '<dt>Runs</dt><dd>From ' + starts + ', ' + ends + '</dd>';
+      rows += '<dt>Used</dt><dd>' + num.format(p.usage) + ' times in total</dd></dl>';
+      return '<div class="prog"><div class="prog-head"><h3>' + esc(p.name) + '</h3>' + statusBadge(p.status) + '</div>' +
+        '<div class="chips" style="margin-top:10px">' + p.tiers.map(function (t) { return '<span class="chip chip--tier">' + tierText(p, t) + '</span>'; }).join('') + '</div>' + rows + '</div>';
+    }).join('');
+
+    if (state.codes.length) {
+      $('book').innerHTML += '<h3 style="margin:18px 0 8px;font-size:14px">Discount codes</h3><table><thead><tr><th>Code</th><th>Offer</th><th class="n">Used</th></tr></thead><tbody>' +
+        state.codes.map(function (o) { return '<tr><td>' + esc((o.codes || []).join(', ')) + '</td><td>' + esc(o.title) + '</td><td class="n">' + num.format(o.usage) + '</td></tr>'; }).join('') + '</tbody></table>';
+    }
+    if (state.past.length) {
+      $('book').innerHTML += '<details><summary>' + state.past.length + ' ended offers</summary><table style="margin-top:8px"><tbody>' +
+        state.past.map(function (o) { return '<tr><td>' + esc(o.title) + '</td><td class="muted">ended ' + date(o.endsAt) + '</td><td class="n">' + num.format(o.usage) + ' uses</td></tr>'; }).join('') + '</tbody></table></details>';
+    }
+
+    renderLadders();
+    renderStacking();
+    renderHealth();
+    if (state.orders) renderOrders();
+  }
+
+  /* ---------------- price ladders ---------------- */
+  function pricePoints(it) {
+    var pts = {};
+    (it ? it.products : []).forEach(function (x) {
+      var p = state.products[x.id]; if (!p) return;
+      p.variants.nodes.forEach(function (v) {
+        var label = v.title === 'Default Title' ? short(p.title) : v.title;
+        var k = label + '|' + v.price;
+        pts[k] = pts[k] || { label: label, price: parseFloat(v.price), n: 0 };
+        pts[k].n++;
+      });
+    });
+    return Object.keys(pts).map(function (k) { return pts[k]; }).sort(function (a, b) { return b.n - a.n || a.price - b.price; }).slice(0, 3).sort(function (a, b) { return a.price - b.price; });
+  }
+
+  function tierFor(p, q) {
+    var hit = null;
+    p.tiers.forEach(function (t) { if (q >= t.min) hit = t; });
+    return hit;
+  }
+
+  function unitAfter(price, t) {
+    if (!t) return price;
+    if (t.pct != null) return price * (1 - t.pct / 100);
+    return Math.max(0, price - t.amt);
+  }
+
+  function renderLadders() {
+    var out = [];
+    state.programmes.forEach(function (p) {
+      if (p.kind === 'qty' || p.kind === 'gift') {
+        var pts = p.kind === 'gift' ? giftPoints() : pricePoints(p.items);
+        if (!pts.length) return;
+        var maxMin = p.tiers[p.tiers.length - 1].min;
+        var rows = Math.min(Math.max(maxMin + 1, 4), 12);
+        var h = '<div class="prog"><div class="prog-head"><h3>' + esc(p.name) + '</h3>' + statusBadge(p.status) + '</div>' +
+          (p.kind === 'gift' ? '<p class="muted" style="margin:6px 0 0">Shown with car fragrance prices. The discount works the same on any product in a gift box.</p>' : '') +
+          '<div class="scroll" style="margin-top:10px"><table><thead><tr><th>Qty</th><th>Offer</th>' +
+          pts.map(function (pt) { return '<th class="n">' + esc(pt.label) + ' (' + inr.format(pt.price) + ')</th>'; }).join('') + '</tr></thead><tbody>';
+        var prev = null;
+        for (var q = 1; q <= rows; q++) {
+          var t = tierFor(p, q);
+          var step = t && t !== prev;
+          prev = t;
+          h += '<tr class="' + (step ? 'step' : '') + '"><td>' + q + (q === rows && q >= maxMin ? '+' : '') + '</td><td>' + (t ? esc(t.pct != null ? fmtPct(t.pct) + ' off' : inr.format(t.amt) + ' off each') : '<span class="muted">Full price</span>') + '</td>' +
+            pts.map(function (pt) {
+              var u = unitAfter(pt.price, t), pay = u * q, save = pt.price * q - pay;
+              return '<td class="n"><b>' + inr2.format(pay) + '</b>' + (save > 0 ? '<br><small class="muted">save ' + inr2.format(save) + ' · ' + inr2.format(u) + ' each</small>' : '') + '</td>';
+            }).join('') + '</tr>';
+        }
+        h += '</tbody></table></div>';
+        var amtTiers = p.tiers.filter(function (t) { return t.amt != null; });
+        if (amtTiers.length && pts.length) {
+          h += '<p class="muted" style="margin:8px 0 0">Fixed-amount tiers work out to ' + amtTiers.map(function (t) {
+            return t.min + '+: ' + pts.map(function (pt) { return fmtPct(t.amt / pt.price * 100) + ' on ' + esc(pt.label); }).join(', ');
+          }).join('; ') + '.</p>';
+        }
+        out.push(h + '</div>');
+      } else if (p.kind === 'addon' || p.kind === 'threshold') {
+        var gp = pricePoints(p.items);
+        if (!gp.length) return;
+        var price = gp[0].price;
+        var hh = '<div class="prog"><div class="prog-head"><h3>' + esc(p.name) + '</h3>' + statusBadge(p.status) + '</div><div class="scroll" style="margin-top:10px"><table><thead><tr><th>' +
+          (p.kind === 'addon' ? 'In the cart' : 'Order value') + '</th><th class="n">' + esc(p.getName) + ' price</th><th class="n">Customer saves</th></tr></thead><tbody>';
+        if (p.kind === 'addon') hh += '<tr><td>No qualifying ' + p.unit + 's</td><td class="n">' + inr2.format(price) + '</td><td class="n muted">none</td></tr>';
+        p.tiers.forEach(function (t) {
+          var pay = unitAfter(price, t);
+          hh += '<tr class="step"><td>' + (p.kind === 'addon' ? t.min + ' ' + p.unit + (t.min > 1 ? 's' : '') + (t === p.tiers[p.tiers.length - 1] ? ' or more' : '') : inr.format(t.min) + ' or more') + '</td><td class="n"><b>' + (pay === 0 ? 'Free' : inr2.format(pay)) + '</b></td><td class="n">' + inr2.format(price - pay) + '</td></tr>';
+        });
+        out.push(hh + '</tbody></table></div></div>');
+      }
+    });
+    $('ladders').innerHTML = out.join('') || '<div class="empty">No quantity-based offers are live.</div>';
+  }
+
+  function giftPoints() {
+    var best = null;
+    state.programmes.forEach(function (p) {
+      if (p.kind !== 'qty') return;
+      var pts = pricePoints(p.items);
+      if (pts.length && (!best || p.items.products.length > best.items.products.length)) best = { items: p.items, pts: pts };
+    });
+    return best ? best.pts : [{ label: 'Item', price: 399, n: 1 }];
+  }
+
+  /* ---------------- stacking ---------------- */
+  function discountedSet(p) {
+    if (p.kind === 'gift' || (p.items && p.items.all)) return 'ALL';
+    return (p.items ? p.items.products : []).map(function (x) { return x.id; });
+  }
+
+  function overlap(a, b) {
+    if (a === 'ALL' && b === 'ALL') return 'ALL';
+    if (a === 'ALL') return b; if (b === 'ALL') return a;
+    return a.filter(function (x) { return b.indexOf(x) >= 0; });
+  }
+
+  function names(ids) {
+    if (ids === 'ALL') return 'every product';
+    var n = ids.map(function (id) { return state.products[id] ? short(state.products[id].title) : id; });
+    return n.length > 4 ? n.slice(0, 3).join(', ') + ' and ' + (n.length - 3) + ' more' : n.join(', ');
+  }
+
+  function maxOff(p) { return Math.max.apply(null, p.tiers.map(function (t) { return t.pct != null ? t.pct : 0; }).concat([0])); }
+
+  function offRange(p) {
+    var v = p.tiers.map(function (t) { return t.pct != null ? fmtPct(t.pct) : inr.format(t.amt) + ' each'; });
+    return v.length > 1 ? v[0] + ' to ' + v[v.length - 1] : v[0];
+  }
+
+  function pctAt(p, q, price) {
+    var t = tierFor(p, q);
+    if (!t) return 0;
+    return t.pct != null ? t.pct : (price ? t.amt / price * 100 : 0);
+  }
+
+  function giftVsPack(gift, pack) {
+    var pts = pricePoints(pack.items), price = pts.length ? pts[0].price : 0;
+    var top = Math.max(gift.tiers[gift.tiers.length - 1].min, pack.tiers[pack.tiers.length - 1].min);
+    var packWins = null;
+    for (var q = 1; q <= top; q++) if (pctAt(pack, q, price) > pctAt(gift, q, price) && pctAt(pack, q, price) > 0) { packWins = q; break; }
+    var s = 'In a gift box, each line gets the bigger of the gift discount (' + offRange(gift) + ') and ' + esc(pack.name) + ' (' + offRange(pack) + ').';
+    s += packWins ? ' From ' + packWins + ' ' + pack.unit + 's of these in one box, the ' + esc(pack.name) + ' price saves more, so the customer gets that instead.' : ' The gift discount saves at least as much at every box size.';
+    return s;
+  }
+
+  function stackingRows() {
+    var P = state.programmes.filter(function (p) { return ['gift', 'qty', 'addon', 'threshold'].indexOf(p.kind) >= 0; });
+    var rows = [];
+    for (var i = 0; i < P.length; i++) for (var j = i + 1; j < P.length; j++) {
+      var a = P[i], b = P[j];
+      var both = a.combines && b.combines && a.combines.productDiscounts && b.combines.productDiscounts;
+      var ov = overlap(discountedSet(a), discountedSet(b));
+      var hasOv = ov === 'ALL' || ov.length;
+      var kinds = [a.kind, b.kind].sort().join('+');
+
+      if (kinds === 'addon+threshold') {
+        var th = a.kind === 'threshold' ? a : b, ad = th === a ? b : a;
+        if (hasOv) rows.push({ tone: 'info', head: esc(th.name) + ' and ' + esc(ad.name) + ' reward the same product',
+          text: 'Above ' + inr.format(th.tiers[0].min) + ' the ' + esc(th.getName) + ' is free, so the add-on discount stops mattering. Below it, the add-on tiers apply. A cart gets only one discounted ' + esc(th.getName) + ' from these two.' });
+        continue;
+      }
+      if (a.kind === 'gift' || b.kind === 'gift') {
+        var g = a.kind === 'gift' ? a : b, o = g === a ? b : a;
+        if (o.kind === 'qty') rows.push({ tone: 'info', head: 'Build your gift and ' + esc(o.name) + ' can discount the same ' + o.unit + 's', text: giftVsPack(g, o) });
+        else rows.push({ tone: 'info', head: 'A gift box can include ' + esc(o.getName || o.name),
+          text: 'If it goes into a gift box, that line gets the bigger of the gift discount (' + offRange(g) + ') and ' + esc(o.name) + ' (' + (o.kind === 'threshold' ? 'free' : offRange(o)) + ').' });
+        continue;
+      }
+      if (hasOv) rows.push({ tone: 'info', head: esc(a.name) + ' and ' + esc(b.name) + ' can both discount ' + esc(names(ov)), text: 'Only one applies per line: the bigger saving wins.' });
+      if (kinds === 'addon+qty') {
+        var add = a.kind === 'addon' ? a : b, pack = add === a ? b : a;
+        var unl = overlap(add.buys && add.buys.all ? 'ALL' : (add.buys ? add.buys.products.map(function (x) { return x.id; }) : []), discountedSet(pack));
+        if (unl === 'ALL' || unl.length) rows.push({ tone: both ? 'ok' : 'warn',
+          head: 'The ' + pack.unit + 's that unlock ' + esc(add.name) + ' also count for ' + esc(pack.name),
+          text: both ? 'Both combine with product discounts, so they stack: the ' + pack.unit + 's get the pack price and the ' + esc(add.getName) + ' gets the add-on price. Example: 3 ' + pack.unit + 's and the set get ' + offRange({ tiers: [tierFor(pack, 3) || { pct: 0 }] }) + ' off the ' + pack.unit + 's plus ' + offRange({ tiers: [tierFor(add, 3) || { pct: 0 }] }) + ' off the set.' :
+            'One of them does not combine with product discounts, so the customer gets only one. Turn on product combinations on both so they stack.' });
+      }
+    }
+    return rows;
+  }
+
+  function renderStacking() {
+    var rows = stackingRows();
+    var P = state.programmes;
+    var h = rows.length ? rows.map(function (r) { return '<div class="alert a-' + r.tone + '"><div><strong>' + r.head + '</strong>' + r.text + '</div></div>'; }).join('') : '<div class="empty">No offers overlap.</div>';
+    h += '<h3 style="margin:18px 0 8px;font-size:14px">Combination settings</h3><div class="scroll"><table><thead><tr><th>Offer</th><th>Product</th><th>Order</th><th>Shipping</th></tr></thead><tbody>' +
+      P.map(function (p) {
+        var c = p.combines || {};
+        function y(v) { return v ? '<span class="badge b-ok">Yes</span>' : '<span class="badge b-off">No</span>'; }
+        return '<tr><td>' + esc(p.name) + (p.combinesMixed ? ' <span class="badge b-warn">tiers differ</span>' : '') + '</td><td>' + y(c.productDiscounts) + '</td><td>' + y(c.orderDiscounts) + '</td><td>' + y(c.shippingDiscounts) + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+    $('stacking').innerHTML = h;
+  }
+
+  /* ---------------- health ---------------- */
+  function renderHealth() {
+    var A = [];
+    var now = Date.now();
+    if (!state.gift) A.push({ tone: 'bad', head: 'Build your gift discount is off', text: 'Gift boxes get no discount at checkout, but the gift page promises one.', action: 'create' });
+    state.programmes.forEach(function (p) {
+      p.offers.forEach(function (o) {
+        if (o.status === 'SCHEDULED') A.push({ tone: 'info', head: o.title + ' has not started', text: 'Starts ' + date(o.startsAt) + '. Customers do not get it until then.' });
+        if (o.endsAt && o.status === 'ACTIVE' && new Date(o.endsAt) - now < 14 * 864e5) A.push({ tone: 'warn', head: o.title + ' ends soon', text: 'Ends ' + date(o.endsAt) + '.' });
+      });
+      if (p.combinesMixed) A.push({ tone: 'warn', head: p.name + ': tiers have different combination settings', text: 'Some tiers stack with other offers and some do not, so a customer can lose a deal by adding more.' });
+      for (var i = 1; i < p.tiers.length; i++) {
+        var a = p.tiers[i - 1], b = p.tiers[i];
+        if (a.pct != null && b.pct != null && b.pct <= a.pct) A.push({ tone: 'bad', head: p.name + ': a bigger tier does not save more', text: b.min + '+ gives ' + fmtPct(b.pct) + ', the same as or less than ' + a.min + '+ (' + fmtPct(a.pct) + ').' });
+        if (a.amt != null && b.amt != null && b.amt <= a.amt) A.push({ tone: 'bad', head: p.name + ': a bigger tier does not save more', text: b.min + '+ gives ' + inr.format(b.amt) + ' off, not more than ' + a.min + '+.' });
+      }
+      if (p.kind === 'qty' && p.tiers.some(function (t) { return t.amt != null; })) {
+        var pts = pricePoints(p.items);
+        if (pts.length > 1) A.push({ tone: 'info', head: p.name + ' uses a fixed ₹ amount on products with different prices', text: 'The saving is a different % on each version. See Price ladders.' });
+      }
+      if (p.combines && !p.combines.productDiscounts && p.kind !== 'ship') A.push({ tone: 'warn', head: p.name + ' does not combine with product discounts', text: 'When it applies, other product offers in the cart can be dropped.' });
+    });
+    var h = '<h2>Offer health</h2><p class="sub">' + state.programmes.length + ' live offers, ' + state.programmes.reduce(function (s, p) { return s + p.offers.length; }, 0) + ' discount rules. ' + state.past.length + ' ended.</p>';
+    if (!A.length) A.push({ tone: 'ok', head: 'All offers are running as set up', text: 'No scheduling, stacking or tier problems found.' });
+    h += A.map(function (a) { return '<div class="alert a-' + a.tone + '"><div style="flex:1"><strong>' + esc(a.head) + '</strong>' + esc(a.text) + '</div>' + (a.action ? '<s-button variant="primary" data-create-gift>Turn on</s-button>' : '') + '</div>'; }).join('');
+    $('health').innerHTML = h;
+    var btn = $('health').querySelector('[data-create-gift]');
+    if (btn) btn.addEventListener('click', function () { btn.setAttribute('loading', ''); createGift().finally(function () { btn.removeAttribute('loading'); }); });
   }
 
   function createGift() {
-    var input = {
-      title: GIFT_TITLE,
-      functionHandle: FN_HANDLE,
-      discountClasses: ['PRODUCT'],
-      startsAt: new Date(Date.now() - 60000).toISOString(),
-      combinesWith: { productDiscounts: true, orderDiscounts: false, shippingDiscounts: true }
-    };
+    var input = { title: GIFT_TITLE, functionHandle: FN_HANDLE, discountClasses: ['PRODUCT'], startsAt: new Date(Date.now() - 60000).toISOString(),
+      combinesWith: { productDiscounts: true, orderDiscounts: false, shippingDiscounts: true } };
     return gql('mutation ($d: DiscountAutomaticAppInput!) { discountAutomaticAppCreate(automaticAppDiscount: $d) { automaticAppDiscount { discountId } userErrors { field message } } }', { d: input })
       .then(function (d) {
         var errs = d.discountAutomaticAppCreate.userErrors;
         if (errs.length) throw new Error(errs.map(function (e) { return e.message; }).join('; '));
         toast('Gift discount is on');
-        return loadGift();
-      })
-      .catch(function (e) { toast(e.message, true); });
+        return loadOffers();
+      }).catch(function (e) { toast(e.message, true); });
   }
 
-  function activate(id) {
-    return gql('mutation ($id: ID!) { discountAutomaticActivate(id: $id) { automaticDiscountNode { id } userErrors { field message } } }', { id: id })
-      .then(function (d) {
-        var errs = d.discountAutomaticActivate.userErrors;
-        if (errs.length) throw new Error(errs.map(function (e) { return e.message; }).join('; '));
-        toast('Gift discount is on');
-        return loadGift();
-      })
-      .catch(function (e) { toast(e.message, true); });
-  }
-
-  /* ---------- orders ---------- */
-
+  /* ---------------- orders ---------------- */
   var APP_FRAG = '__typename ... on AutomaticDiscountApplication { title } ... on DiscountCodeApplication { code } ... on ManualDiscountApplication { title } ... on ScriptDiscountApplication { title }';
-  var ORDERS_Q = 'query ($q: String!, $after: String) { orders(first: 25, after: $after, query: $q, sortKey: CREATED_AT, reverse: true) { pageInfo { hasNextPage endCursor } nodes { id name createdAt cancelledAt totalPriceSet { shopMoney { amount } } totalDiscountsSet { shopMoney { amount } } discountApplications(first: 8) { nodes { ' + APP_FRAG + ' } } lineItems(first: 25) { nodes { quantity name customAttributes { key value } originalTotalSet { shopMoney { amount } } discountAllocations { allocatedAmountSet { shopMoney { amount } } discountApplication { ' + APP_FRAG + ' } } } } } } }';
-
+  var ORDERS_Q = 'query ($q: String!, $after: String) { orders(first: 25, after: $after, query: $q, sortKey: CREATED_AT, reverse: true) { pageInfo { hasNextPage endCursor } nodes { id name createdAt cancelledAt subtotalPriceSet { shopMoney { amount } } totalPriceSet { shopMoney { amount } } totalDiscountsSet { shopMoney { amount } } lineItems(first: 25) { nodes { quantity name product { id title } customAttributes { key value } originalTotalSet { shopMoney { amount } } discountAllocations { allocatedAmountSet { shopMoney { amount } } discountApplication { ' + APP_FRAG + ' } } } } } } }';
   var loadToken = 0;
 
   function loadOrders(days) {
-    var token = ++loadToken;
+    var token = ++loadToken, all = [], pages = 0;
+    state.days = days;
     var since = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10);
-    var q = 'created_at:>=' + since;
-    var all = [], pages = 0;
-    ['gifts', 'discounts', 'products'].forEach(function (id) { $(id).innerHTML = '<div class="empty">Loading…</div>'; });
     $('kpis').innerHTML = '<div class="empty" style="grid-column:1/-1">Loading orders…</div>';
-
     function page(after) {
-      return gql(ORDERS_Q, { q: q, after: after || null }).then(function (d) {
+      return gql(ORDERS_Q, { q: 'created_at:>=' + since, after: after || null }).then(function (d) {
         if (token !== loadToken) return null;
-        all = all.concat(d.orders.nodes);
-        pages++;
-        if (d.orders.pageInfo.hasNextPage && pages < MAX_PAGES) return page(d.orders.pageInfo.endCursor);
+        all = all.concat(d.orders.nodes); pages++;
+        if (d.orders.pageInfo.hasNextPage && pages < MAX_ORDER_PAGES) return page(d.orders.pageInfo.endCursor);
         return { orders: all, truncated: d.orders.pageInfo.hasNextPage };
       });
     }
-
     return page().then(function (res) {
       if (!res) return;
-      render(res.orders.filter(function (o) { return !o.cancelledAt; }), days, res.truncated);
+      state.orders = res.orders.filter(function (o) { return !o.cancelledAt; });
+      state.truncated = res.truncated;
+      renderOrders();
     }).catch(function (e) {
-      $('kpis').innerHTML = '<div class="empty" style="grid-column:1/-1">Could not load orders: ' + esc(e.message) + '</div>';
-      ['gifts', 'discounts', 'products'].forEach(function (id) { $(id).innerHTML = ''; });
+      var msg = '<div class="empty">Could not load orders: ' + esc(e.message) + '</div>';
+      $('kpis').innerHTML = msg; $('progperf').innerHTML = msg; $('opps').innerHTML = msg; $('gifts').innerHTML = msg;
     });
   }
 
-  function render(orders, days, truncated) {
-    var revenue = 0, disc = 0, discOrders = 0, discovery = 0;
-    var byDisc = {}, byProd = {}, gifts = {}, giftOrders = {};
+  function appTitle(a) { return a ? (a.title || a.code || 'Other') : 'Other'; }
+
+  function renderOrders() {
+    var orders = state.orders; if (!orders) return;
+    var n = orders.length, revenue = 0, disc = 0, gross = 0, discOrders = 0, discRev = 0, fullRev = 0;
+    var perf = {}, gifts = {}, giftOrders = {};
 
     orders.forEach(function (o) {
       var total = amt(o.totalPriceSet), od = amt(o.totalDiscountsSet);
-      revenue += total; disc += od;
-      if (od > 0) discOrders++;
-      var seenDisc = {}, hasDiscovery = false;
-
+      revenue += total; disc += od; gross += amt(o.subtotalPriceSet) + od;
+      if (od > 0) { discOrders++; discRev += total; } else fullRev += total;
+      var seen = {};
       o.lineItems.nodes.forEach(function (li) {
-        var attrs = {};
-        (li.customAttributes || []).forEach(function (a) { attrs[a.key] = a.value; });
+        var attrs = {}; (li.customAttributes || []).forEach(function (a) { attrs[a.key] = a.value; });
         var lineDisc = 0;
         (li.discountAllocations || []).forEach(function (al) {
-          var t = appTitle(al.discountApplication), v = amt(al.allocatedAmountSet);
+          var v = amt(al.allocatedAmountSet), t = appTitle(al.discountApplication);
           lineDisc += v;
-          var row = byDisc[t] || (byDisc[t] = { title: t, orders: 0, given: 0, revenue: 0 });
-          row.given += v;
-          if (!seenDisc[t]) { seenDisc[t] = 1; row.orders++; row.revenue += total; }
+          var off = state.byTitle[t], prog = off && off.prog ? off.prog : null;
+          var key = prog ? prog.key : 'other|' + t;
+          var r = perf[key] || (perf[key] = { name: prog ? prog.name : t, orders: 0, given: 0, lineGross: 0, units: 0, tiers: {} });
+          r.given += v;
+          if (v > 0) { r.lineGross += amt(li.originalTotalSet); r.units += li.quantity; }
+          r.tiers[t] = (r.tiers[t] || 0) + (seen[key + t] ? 0 : 1);
+          if (!seen[key]) { seen[key] = 1; r.orders++; }
+          seen[key + t] = 1;
         });
-        var net = amt(li.originalTotalSet) - lineDisc;
-
-        var p = byProd[li.name] || (byProd[li.name] = { name: li.name, units: 0, sales: 0 });
-        p.units += li.quantity; p.sales += net;
-        if (/discovery set/i.test(li.name)) hasDiscovery = true;
-
         var set = attrs._set || '';
-        if (/^Gift of/i.test(set)) {
-          var key = o.id + '|' + (attrs._set_key || set);
-          var g = gifts[key] || (gifts[key] = { items: 0, value: 0, saved: 0 });
-          g.items += li.quantity; g.value += net;
-          (li.discountAllocations || []).forEach(function (al) {
-            if (appTitle(al.discountApplication) === GIFT_TITLE) g.saved += amt(al.allocatedAmountSet);
-          });
+        var gp = state.gift ? state.gift.prefix : GIFT_DEFAULT.prefix;
+        if (set.indexOf(gp) === 0) {
+          var k = o.id + '|' + (attrs._set_key || set);
+          var g = gifts[k] || (gifts[k] = { items: 0, value: 0, saved: 0, order: o.name });
+          g.items += li.quantity; g.value += amt(li.originalTotalSet) - lineDisc;
+          (li.discountAllocations || []).forEach(function (al) { if (appTitle(al.discountApplication) === GIFT_TITLE) g.saved += amt(al.allocatedAmountSet); });
           giftOrders[o.id] = 1;
         }
       });
-      if (hasDiscovery) discovery++;
     });
 
-    var n = orders.length;
+    var dn = discOrders, fn = n - discOrders;
     $('kpis').innerHTML = [
-      kpi('Orders', num.format(n), days + ' days'),
+      kpi('Orders', num.format(n), 'last ' + state.days + ' days'),
       kpi('Revenue', inr.format(revenue), 'after discounts'),
-      kpi('Average order', inr.format(n ? revenue / n : 0), ''),
-      kpi('Discounts given', inr.format(disc), pct(discOrders, n) + ' of orders used one'),
-      kpi('Discovery Set attach', pct(discovery, n), num.format(discovery) + ' orders', true),
-      kpi('Gift orders', num.format(Object.keys(giftOrders).length), pct(Object.keys(giftOrders).length, n) + ' of orders', true)
+      kpi('Discounts given', inr.format(disc), fmtPct(gross ? disc / gross * 100 : 0) + ' of gross sales', true),
+      kpi('Orders with an offer', pct(dn, n), num.format(dn) + ' orders'),
+      kpi('AOV with an offer', inr.format(dn ? discRev / dn : 0), 'vs ' + inr.format(fn ? fullRev / fn : 0) + ' without', true),
+      kpi('Gift orders', num.format(Object.keys(giftOrders).length), pct(Object.keys(giftOrders).length, n) + ' of orders')
     ].join('');
 
+    var rows = Object.keys(perf).map(function (k) { return perf[k]; }).sort(function (a, b) { return b.given - a.given; });
+    if (!rows.length) $('progperf').innerHTML = '<div class="empty">No offers were used in this period.</div>';
+    else {
+      var max = rows[0].given || 1;
+      $('progperf').innerHTML = '<div class="scroll"><table><thead><tr><th>Offer</th><th class="n">Orders</th><th class="n">Units</th><th class="n">Given away</th><th class="n">Effective discount</th><th>Most used tier</th></tr></thead><tbody>' +
+        rows.map(function (r) {
+          var top = Object.keys(r.tiers).sort(function (a, b) { return r.tiers[b] - r.tiers[a]; })[0] || '';
+          return '<tr><td>' + esc(r.name) + '<div class="bar"><i style="width:' + Math.max(2, r.given / max * 100) + '%"></i></div></td><td class="n">' + num.format(r.orders) + '</td><td class="n">' + num.format(r.units) +
+            '</td><td class="n">' + inr.format(r.given) + '</td><td class="n">' + fmtPct(r.lineGross ? r.given / r.lineGross * 100 : 0) + '</td><td class="muted">' + esc(top) + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    }
+
+    renderOpps(orders);
     renderGifts(gifts);
-    renderDiscounts(byDisc);
-    renderProducts(byProd);
-    $('foot').textContent = 'Cancelled orders excluded. Updated ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) +
-      (truncated ? ' · showing the latest ' + num.format(n) + ' orders only' : '');
+    $('foot').textContent = 'Updated ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + (state.truncated ? ' · latest ' + num.format(n) + ' orders only' : '');
   }
 
   function kpi(label, value, sub, hi) {
     return '<div class="kpi' + (hi ? ' kpi--hi' : '') + '"><small>' + esc(label) + '</small><b>' + esc(value) + '</b><small>' + esc(sub) + '</small></div>';
   }
 
+  function renderOpps(orders) {
+    var out = [];
+    state.programmes.forEach(function (p) {
+      if (p.kind === 'qty') {
+        var ids = p.items.products.map(function (x) { return x.id; });
+        var hist = {}, near = {}, buyers = 0;
+        orders.forEach(function (o) {
+          var q = 0;
+          o.lineItems.nodes.forEach(function (li) { if (li.product && ids.indexOf(li.product.id) >= 0) q += li.quantity; });
+          if (!q) return;
+          buyers++;
+          hist[q] = (hist[q] || 0) + 1;
+          var next = p.tiers.filter(function (t) { return t.min > q; })[0];
+          if (next && next.min - q === 1) near[next.min] = (near[next.min] || 0) + 1;
+        });
+        if (!buyers) return;
+        var nearTotal = Object.keys(near).reduce(function (s, k) { return s + near[k]; }, 0);
+        var maxQ = Math.max.apply(null, Object.keys(hist).map(Number));
+        var top = Math.max(p.tiers[p.tiers.length - 1].min, Math.min(maxQ, 12));
+        var peak = Math.max.apply(null, Object.keys(hist).map(function (k) { return hist[k]; }));
+        var h = '<div class="prog"><div class="prog-head"><h3>' + esc(p.name) + '</h3><span class="badge ' + (nearTotal ? 'b-warn' : 'b-ok') + '">' + num.format(nearTotal) + ' one ' + p.unit + ' short</span></div>' +
+          '<p class="muted" style="margin:6px 0 10px">' + num.format(buyers) + ' orders bought these. How many ' + p.unit + 's each order had:</p><table><tbody>';
+        for (var q = 1; q <= top; q++) {
+          var c = hist[q] || 0, t = tierFor(p, q), nx = p.tiers.filter(function (x) { return x.min === q + 1; })[0];
+          h += '<tr class="' + (nx && c ? 'step' : '') + '"><td style="width:90px">' + q + ' ' + p.unit + (q > 1 ? 's' : '') + '</td><td class="n" style="width:60px">' + num.format(c) + '</td><td><div class="bar"><i style="width:' + (c ? Math.max(2, c / peak * 100) : 0) + '%"></i></div></td><td class="muted" style="width:45%">' +
+            (t ? 'got ' + (t.pct != null ? fmtPct(t.pct) + ' off' : inr.format(t.amt) + ' off each') : 'full price') + (nx && c ? ' · <b style="color:var(--ink)">one more unlocks ' + (nx.pct != null ? fmtPct(nx.pct) : inr.format(nx.amt) + ' each') + '</b>' : '') + '</td></tr>';
+        }
+        out.push(h + '</tbody></table></div>');
+      } else if (p.kind === 'addon') {
+        var bIds = p.buys && !p.buys.all ? p.buys.products.map(function (x) { return x.id; }) : null;
+        var gIds = p.items.products.map(function (x) { return x.id; });
+        var buckets = {};
+        orders.forEach(function (o) {
+          var q = 0, has = false;
+          o.lineItems.nodes.forEach(function (li) {
+            if (!li.product) return;
+            if (!bIds || bIds.indexOf(li.product.id) >= 0) q += li.quantity;
+            if (gIds.indexOf(li.product.id) >= 0) has = true;
+          });
+          if (!q) return;
+          var top = p.tiers[p.tiers.length - 1].min, b = q >= top ? top : q;
+          var r = buckets[b] || (buckets[b] = { orders: 0, withSet: 0 });
+          r.orders++; if (has) r.withSet++;
+        });
+        var keys = Object.keys(buckets).map(Number).sort(function (a, b) { return a - b; });
+        if (!keys.length) return;
+        var missed = keys.reduce(function (s, k) { return s + buckets[k].orders - buckets[k].withSet; }, 0);
+        out.push('<div class="prog"><div class="prog-head"><h3>' + esc(p.name) + '</h3><span class="badge ' + (missed ? 'b-warn' : 'b-ok') + '">' + num.format(missed) + ' orders skipped it</span></div>' +
+          '<p class="muted" style="margin:6px 0 10px">Orders with qualifying ' + p.unit + 's, and how many also took ' + esc(p.getName) + '.</p><table><thead><tr><th>' + p.unit.charAt(0).toUpperCase() + p.unit.slice(1) + 's in the order</th><th>Offer on the set</th><th class="n">Orders</th><th class="n">Took the set</th><th class="n">Attach rate</th></tr></thead><tbody>' +
+          keys.map(function (k) {
+            var t = tierFor(p, k), r = buckets[k];
+            return '<tr><td>' + k + (k === p.tiers[p.tiers.length - 1].min ? '+' : '') + '</td><td>' + (t ? (t.pct != null ? fmtPct(t.pct) : inr.format(t.amt)) + ' off' : 'none') + '</td><td class="n">' + num.format(r.orders) + '</td><td class="n">' + num.format(r.withSet) + '</td><td class="n"><b>' + pct(r.withSet, r.orders) + '</b></td></tr>';
+          }).join('') + '</tbody></table></div>');
+      } else if (p.kind === 'threshold' || p.kind === 'ship') {
+        var th = p.tiers[0].min; if (!th) return;
+        var nearList = [], over = 0;
+        orders.forEach(function (o) {
+          var sub = amt(o.subtotalPriceSet) + amt(o.totalDiscountsSet);
+          if (sub >= th) over++;
+          else if (th - sub <= NEAR_THRESHOLD) nearList.push(th - sub);
+        });
+        var avgGap = nearList.length ? nearList.reduce(function (s, x) { return s + x; }, 0) / nearList.length : 0;
+        out.push('<div class="prog"><div class="prog-head"><h3>' + esc(p.name) + '</h3><span class="badge ' + (nearList.length ? 'b-warn' : 'b-ok') + '">' + num.format(nearList.length) + ' orders just missed it</span></div>' +
+          '<div class="kpis" style="margin-top:10px">' + kpi('Qualified', num.format(over), pct(over, orders.length) + ' of orders') +
+          kpi('Within ' + inr.format(NEAR_THRESHOLD) + ' of ' + inr.format(th), num.format(nearList.length), 'orders fell short') +
+          kpi('Average shortfall', inr.format(avgGap), nearList.length ? 'one more item would close it' : 'none', true) + '</div></div>');
+      }
+    });
+    $('opps').innerHTML = out.join('') || '<div class="empty">No orders with offer products in this period yet.</div>';
+  }
+
   function renderGifts(gifts) {
+    var p = state.gift;
     var list = Object.keys(gifts).map(function (k) { return gifts[k]; });
-    if (!list.length) {
-      $('gifts').innerHTML = '<div class="empty">No gift boxes ordered in this period yet.</div>';
-      return;
-    }
-    var tiers = { 2: 0, 3: 0, 4: 0 }, value = 0, saved = 0, items = 0;
+    var head = p ? '<div class="chips" style="margin-bottom:12px">' + p.tiers.map(function (t) { return '<span class="chip chip--tier">' + tierText(p, t) + '</span>'; }).join('') + ' ' + statusBadge(p.status) + '</div>' : '<div class="alert a-bad"><div><strong>Gift discount is off</strong>Turn it on from Overview.</div></div>';
+    if (!list.length) { $('gifts').innerHTML = head + '<div class="empty">No gift boxes ordered in this period yet.</div>'; return; }
+    var tiers = p ? p.tiers : GIFT_DEFAULT.tiers.map(function (t) { return { min: t[0], pct: t[1] }; });
+    var counts = tiers.map(function () { return 0; }), value = 0, saved = 0, items = 0, below = 0;
     list.forEach(function (g) {
-      tiers[g.items >= 4 ? 4 : (g.items >= 3 ? 3 : 2)]++;
+      var idx = -1; tiers.forEach(function (t, i) { if (g.items >= t.min) idx = i; });
+      if (idx >= 0) counts[idx]++; else below++;
       value += g.value; saved += g.saved; items += g.items;
     });
-    $('gifts').innerHTML =
-      '<div class="kpis">' +
-        kpi('Gift boxes', num.format(list.length), num.format(items) + ' items') +
-        kpi('Gift sales', inr.format(value), 'after discount') +
-        kpi('Average gift', inr.format(value / list.length), (items / list.length).toFixed(1) + ' items') +
-        kpi('Customer savings', inr.format(saved), 'from ' + GIFT_TITLE) +
-      '</div>' +
-      '<div class="tiers" style="margin-top:12px">' +
-        tier('Gift of 2', '5% off', tiers[2], list.length) +
-        tier('Gift of 3', '10% off', tiers[3], list.length) +
-        tier('Gift of 4+', '15% off', tiers[4], list.length) +
-      '</div>';
-  }
-
-  function tier(label, off, count, total) {
-    return '<div class="tier"><small class="muted">' + label + ' · ' + off + '</small><b>' + num.format(count) + '</b><small class="muted">' + pct(count, total) + ' of gifts</small></div>';
-  }
-
-  function renderDiscounts(byDisc) {
-    var rows = Object.keys(byDisc).map(function (k) { return byDisc[k]; }).sort(function (a, b) { return b.given - a.given; });
-    if (!rows.length) { $('discounts').innerHTML = '<div class="empty">No discounts used in this period.</div>'; return; }
-    var max = rows[0].given || 1;
-    $('discounts').innerHTML = '<table><thead><tr><th>Discount</th><th class="n">Orders</th><th class="n">Given</th><th class="n">Order revenue</th></tr></thead><tbody>' +
-      rows.map(function (r) {
-        return '<tr><td>' + esc(r.title) + '<div class="bar"><i style="width:' + Math.max(2, r.given / max * 100) + '%"></i></div></td>' +
-          '<td class="n">' + num.format(r.orders) + '</td><td class="n">' + inr.format(r.given) + '</td><td class="n">' + inr.format(r.revenue) + '</td></tr>';
-      }).join('') + '</tbody></table>';
-  }
-
-  function renderProducts(byProd) {
-    var rows = Object.keys(byProd).map(function (k) { return byProd[k]; }).sort(function (a, b) { return b.units - a.units; }).slice(0, 10);
-    if (!rows.length) { $('products').innerHTML = '<div class="empty">No sales in this period.</div>'; return; }
-    var max = rows[0].units || 1;
-    $('products').innerHTML = '<table><thead><tr><th>Product</th><th class="n">Units</th><th class="n">Sales</th></tr></thead><tbody>' +
-      rows.map(function (r) {
-        return '<tr><td>' + esc(r.name) + '<div class="bar"><i style="width:' + Math.max(2, r.units / max * 100) + '%"></i></div></td>' +
-          '<td class="n">' + num.format(r.units) + '</td><td class="n">' + inr.format(r.sales) + '</td></tr>';
-      }).join('') + '</tbody></table>';
+    $('gifts').innerHTML = head + '<div class="kpis">' +
+      kpi('Gift boxes', num.format(list.length), num.format(items) + ' items') +
+      kpi('Gift sales', inr.format(value), 'after discount') +
+      kpi('Average box', inr.format(value / list.length), (items / list.length).toFixed(1) + ' items', true) +
+      kpi('Customer savings', inr.format(saved), fmtPct(value + saved ? saved / (value + saved) * 100 : 0) + ' effective') + '</div>' +
+      '<div class="tiers" style="margin-top:12px">' + tiers.map(function (t, i) {
+        return '<div class="tier"><small class="muted">Gift of ' + t.min + (i === tiers.length - 1 ? '+' : '') + ' · ' + fmtPct(t.pct) + ' off</small><b>' + num.format(counts[i]) + '</b><small class="muted">' + pct(counts[i], list.length) + ' of boxes</small></div>';
+      }).join('') + (below ? '<div class="tier"><small class="muted">Below the first tier</small><b>' + num.format(below) + '</b><small class="muted">no gift discount</small></div>' : '') + '</div>';
   }
 
   $('period').addEventListener('change', function (e) { loadOrders(parseInt(e.target.value, 10)); });
-  loadGift();
+  loadOffers();
   loadOrders(30);
 })();
 </script>
